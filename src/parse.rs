@@ -94,8 +94,7 @@ impl Comments {
     ////# Parse a Comment Line
     ////If the comment line is the first line in a comment then record as then check as first comment
     ////
-    /// else record the line as part of the body of the comment.
-
+    ////else record the line as part of the body of the comment.
     fn parse_comment(&mut self, line: &str) -> Result<(), String> {
         if self.current_state == State::CODE {
             self.current_state = State::COMMENT;
