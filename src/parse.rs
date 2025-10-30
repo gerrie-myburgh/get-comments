@@ -160,6 +160,7 @@ impl Comments {
         doc_root: &str,
         start: &str,
         folder_prefixes: &str,
+        file_extension: &str,
     ) {
         self.start_of_comment = start.to_string();
         self.current_state = State::CODE;
@@ -172,7 +173,7 @@ impl Comments {
         {
             let file_name = entry.file_name().to_string_lossy();
 
-            if entry.file_type().is_file() && file_name.ends_with(".rs") {
+            if entry.file_type().is_file() && file_name.ends_with(file_extension) {
                 if let Some(name) = entry.path().to_str() {
                     self.line_counter = 1u16;
                     if let Err(_error) = self.parse_file(name, doc_root, folder_prefixes) {
