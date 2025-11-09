@@ -206,11 +206,15 @@ impl Comments {
 #[cfg(test)]
 #[test]
 fn test_if_file_path_is_valid() {
-    let comments = Comments::default();
+    let mut comments = Comments::default();
     let path = &vec!["EPIC", "ITEM", "TEST"];
     if let Err(error) = comments.is_valid_folder_path(path, "EPIC epic.ITEM item.TEST test") {
         println!("{error}");
     }
+    comments.current_comment_name = "EPIC epic.ITEM item.TEST test".to_string();
+    comments
+        .comment_block_names
+        .insert(comments.current_comment_name.clone());
     if let Err(error) = comments.is_valid_folder_path(path, "EPIC epic.ITEM item.TEST test") {
         println!("{error}");
     }
