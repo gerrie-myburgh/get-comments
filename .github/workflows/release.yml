@@ -39,6 +39,7 @@ jobs:
 
     - name: List target directory (for debugging)
       run: ls -la target/${{ matrix.target }}/release/
+      shell: bash
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
