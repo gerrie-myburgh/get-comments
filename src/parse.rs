@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 use std::fs::{File, create_dir_all};
-use std::io::{self, BufRead, BufWriter, Write};
+use std::io::{self, BufRead, BufWriter, Error, ErrorKind, Write};
 
 type Value = String;
 type CommentStart = String;
@@ -37,26 +37,14 @@ impl Comments {
         lines: &Vec<String>,
     ) -> Result<(), std::io::Error> {
         // file_name is a '.' delimited slice. Each subslice is a folder starting
-        // from the current working folder
+        // from the current `working folder
         let mut path: Vec<&str> = file_path_and_name.split(".").collect();
-        if path.len() > folder_prefixes.len() + 1 {
-            return Err(std::io::Error::new(
-                io::ErrorKind::NotADirectory,
-                "Path is longer than what is allowed.",
-            ));
+        if let Err(message) = self.is_valid_folder_path(folder_prefixes, file_path_and_name) {
+            return Err(Error::new(ErrorKind::Other, message));
         }
+
         if let Some(file) = path.pop() {
             create_dir_all(path.join("/"))?;
-            let prefixes: Vec<_> = path[1..].iter().zip(folder_prefixes).collect();
-            for item in prefixes {
-                if !item.0.starts_with(item.1) {
-                    return Err(std::io::Error::new(
-                        io::ErrorKind::NotADirectory,
-                        format!("Invalid folder prefix [{}] [{}].", item.0, item.1),
-                    ));
-                }
-            }
-
             path.push(file);
             let the_path = path.join("/");
             let file = File::create(format!("{the_path}.md"))?;
@@ -67,7 +55,38 @@ impl Comments {
                 writeln!(writer, "{}", line)?;
             }
         }
+        Ok(())
+    }
 
+    // check if the file-path and file name is valid wrt to the folder prefixes
+    fn is_valid_folder_path(
+        &self,
+        folder_prefixes: &Vec<&str>,
+        file_path_and_name: &str,
+    ) -> Result<(), String> {
+        let path: Vec<&str> = file_path_and_name.split(".").collect();
+        println!("{:?} {:?} {:?}", folder_prefixes, file_path_and_name, path);
+        if path.is_empty() {
+            return Err(
+                "There is no file path in the first line of the comment block.".to_string(),
+            );
+        }
+        if path.len() > folder_prefixes.len() + 1 {
+            return Err("Path is longer than what is allowed.".to_string());
+        }
+
+        let comment_name = file_path_and_name;
+        if self.comment_block_names.contains(comment_name) {
+            return Err("Comment block name must be unique in code base.".to_string());
+        }
+
+        let prefixes: Vec<_> = path.iter().zip(folder_prefixes).collect();
+        println!("{:?}", prefixes);
+        for item in prefixes {
+            if !item.0.starts_with(item.1) {
+                return Err(format!("Invalid folder prefix [{}] [{}].", item.0, item.1));
+            }
+        }
         Ok(())
     }
 
@@ -78,15 +97,8 @@ impl Comments {
     ////comment starts.
     fn parse_comment_start(&mut self, line: &str) -> Result<(), String> {
         let comment_name = line[self.start_of_comment.len()..].trim();
-        if comment_name.is_empty() {
-            return Err("Comment start does not have a name.".to_string());
-        }
-        if self.comment_block_names.contains(comment_name) {
-            return Err("Comment block name must be unique in code base.".to_string());
-        }
         self.comment_line_start = self.line_counter + 1;
         self.current_comment_name = comment_name.to_string();
-        self.comment_block_names.insert(comment_name.to_string());
         Ok(())
     }
 
@@ -138,13 +150,15 @@ impl Comments {
                     if self.comment.len() > 0 {
                         let first_line =
                             format!("FILE: {file_name} LINE: {}\n", self.comment_line_start);
-                        let comment = &self.comment;
+                        //let comment = self.comment;
                         self.write_out_to_file(
                             &folder_prefixes,
                             format!("{doc_root}.{}", self.current_comment_name).as_str(),
                             first_line.as_str(),
-                            comment,
+                            &self.comment,
                         )?;
+                        self.comment_block_names
+                            .insert(self.current_comment_name.clone());
                         self.comment.clear();
                     }
                 }
@@ -172,7 +186,6 @@ impl Comments {
             .filter_map(|e| e.ok())
         {
             let file_name = entry.file_name().to_string_lossy();
-
             if entry.file_type().is_file() && file_name.ends_with(file_extension) {
                 if let Some(name) = entry.path().to_str() {
                     self.line_counter = 1u16;
@@ -187,5 +200,18 @@ impl Comments {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+#[test]
+fn test_if_file_path_is_valid() {
+    let comments = Comments::default();
+    let path = &vec!["EPIC", "ITEM", "TEST"];
+    if let Err(error) = comments.is_valid_folder_path(path, "EPIC epic.ITEM item.TEST test") {
+        println!("{error}");
+    }
+    if let Err(error) = comments.is_valid_folder_path(path, "EPIC epic.ITEM item.TEST test") {
+        println!("{error}");
     }
 }
