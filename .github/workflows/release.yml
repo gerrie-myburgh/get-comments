@@ -55,7 +55,7 @@ jobs:
     - name: Generate release tag
       id: tag
       run: |
-        SHORT_SHA=$(git rev-parse --short HEAD)
+        SHORT_SHA="${GITHUB_SHA:0:7}"  # First 7 characters of commit SHA
         DATE=$(date +'%Y%m%d')
         VERSION=$(grep '^version' Cargo.toml | head -1 | awk -F '"' '{print $2}')
         NEW_TAG="v${VERSION}-${DATE}-${SHORT_SHA}"
