@@ -13,13 +13,16 @@ jobs:
         include:
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            artifact_name: get-comments-windows-x86_64.exe
+            artifact_name: get-comments.exe
+            binary_name: get-comments.exe
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            artifact_name: get-comments-linux-x86_64
+            artifact_name: get-comments-linux
+            binary_name: get-comments
           - os: macos-latest
             target: x86_64-apple-darwin
-            artifact_name: get-comments-macos-x86_64
+            artifact_name: get-comments-macos
+            binary_name: get-comments
 
     steps:
     - name: Checkout code
@@ -34,11 +37,14 @@ jobs:
     - name: Build
       run: cargo build --release --target ${{ matrix.target }}
 
+    - name: List target directory (for debugging)
+      run: ls -la target/${{ matrix.target }}/release/
+
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.artifact_name }}
-        path: target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
+        path: target/${{ matrix.target }}/release/${{ matrix.binary_name }}
 
   release:
     needs: build
@@ -52,13 +58,15 @@ jobs:
       with:
         path: ./release-artifacts
 
+    - name: List downloaded artifacts (for debugging)
+      run: find ./release-artifacts -type f
+
     - name: Generate release tag
       id: tag
       run: |
-        SHORT_SHA="${GITHUB_SHA:0:7}"  # First 7 characters of commit SHA
+        SHORT_SHA="${GITHUB_SHA:0:7}"
         DATE=$(date +'%Y%m%d')
-        VERSION=$(grep '^version' Cargo.toml | head -1 | awk -F '"' '{print $2}')
-        NEW_TAG="v${VERSION}-${DATE}-${SHORT_SHA}"
+        NEW_TAG="build-${DATE}-${SHORT_SHA}"
         echo "tag=${NEW_TAG}" >> $GITHUB_OUTPUT
 
     - name: Create Release
@@ -70,10 +78,5 @@ jobs:
         generate_release_notes: true
         draft: false
         prerelease: true
-        body: |
-          Automated build from main branch
-          
-          **Commit:** ${{ github.sha }}
-          **Build Date:** ${{ steps.tag.outputs.date }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
