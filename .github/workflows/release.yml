@@ -34,8 +34,19 @@ jobs:
         toolchain: stable
         target: ${{ matrix.target }}
 
-    - name: Build
-      run: cargo build --release --target ${{ matrix.target }}
+    - name: Build and rename
+      run: |
+        # Build with custom binary name from Cargo.toml
+        cargo build --release --target ${{ matrix.target }}
+        
+        # Rename to consistent name for releases
+        if [ "${{ matrix.os }}" = "windows-latest" ]; then
+          cp "target/${{ matrix.target }}/release/my-cool-tool.exe" "get-comments-windows.exe"
+        elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+          cp "target/${{ matrix.target }}/release/my-cool-tool" "get-comments-linux"
+        elif [ "${{ matrix.os }}" = "macos-latest" ]; then
+          cp "target/${{ matrix.target }}/release/my-cool-tool" "get-comments-macos"
+        fi
 
     - name: List target directory (for debugging)
       run: ls -la target/${{ matrix.target }}/release/
@@ -44,8 +55,8 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ matrix.artifact_name }}
-        path: target/${{ matrix.target }}/release/${{ matrix.binary_name }}
+        name: ${{ matrix.output_name }}
+        path: ${{ matrix.output_name }}
 
   release:
     needs: build
