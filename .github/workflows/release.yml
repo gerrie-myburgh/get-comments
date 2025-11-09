@@ -18,11 +18,11 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             artifact_name: get-comments-linux
-            binary_name: get-comments
+            binary_name: get-comments-linux
           - os: macos-latest
             target: x86_64-apple-darwin
             artifact_name: get-comments-macos
-            binary_name: get-comments
+            binary_name: get-comments-macos
 
     steps:
     - name: Checkout code
