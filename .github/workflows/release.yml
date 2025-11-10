@@ -39,15 +39,13 @@ jobs:
         # Build with custom binary name from Cargo.toml
         cargo build --release --target ${{ matrix.target }}
         
-        # create location of executables
-        mkdir "release-artifacts"
         # Rename to consistent name for releases
         if [ "${{ matrix.os }}" = "windows-latest" ]; then
-          cp "target/${{ matrix.target }}/release/get-comments.exe" "release-artifacts/get-comments.exe"
+          cp "target/${{ matrix.target }}/release/get-comments.exe" "get-comments.exe"
         elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-          cp "target/${{ matrix.target }}/release/get-comments" "release-artifacts/get-comments-linux"
+          cp "target/${{ matrix.target }}/release/get-comments" "get-comments-linux"
         elif [ "${{ matrix.os }}" = "macos-latest" ]; then
-          cp "target/${{ matrix.target }}/release/get-comments" "release-artifacts/get-comments-macos"
+          cp "target/${{ matrix.target }}/release/get-comments" "get-comments-macos"
         fi
       shell: bash
 
@@ -89,7 +87,7 @@ jobs:
       with:
         tag_name: ${{ steps.tag.outputs.tag }}
         name: "Build ${{ steps.tag.outputs.tag }}"
-        files: ./release-artifacts/*
+        files: ./*
         generate_release_notes: true
         draft: false
         prerelease: true
