@@ -65,7 +65,6 @@ impl Comments {
         file_path_and_name: &str,
     ) -> Result<(), String> {
         let path: Vec<&str> = file_path_and_name.split(".").collect();
-        println!("{:?} {:?} {:?}", folder_prefixes, file_path_and_name, path);
         if path.is_empty() {
             return Err(
                 "There is no file path in the first line of the comment block.".to_string(),
@@ -80,8 +79,7 @@ impl Comments {
             return Err("Comment block name must be unique in code base.".to_string());
         }
 
-        let prefixes: Vec<_> = path.iter().zip(folder_prefixes).collect();
-        println!("{:?}", prefixes);
+        let prefixes: Vec<_> = path[1..].iter().zip(folder_prefixes).collect();
         for item in prefixes {
             if !item.0.starts_with(item.1) {
                 return Err(format!("Invalid folder prefix [{}] [{}].", item.0, item.1));
