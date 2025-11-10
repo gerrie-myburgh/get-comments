@@ -1,6 +1,7 @@
 use std::collections::HashSet;
-use std::fs::{File, create_dir_all};
+use std::fs::{File, create_dir_all, remove_dir_all};
 use std::io::{self, BufRead, BufWriter, Error, ErrorKind, Write};
+use walkdir::WalkDir;
 
 type Value = String;
 type CommentStart = String;
@@ -146,8 +147,10 @@ impl Comments {
                 if self.current_state == State::COMMENT {
                     self.current_state = State::CODE;
                     if self.comment.len() > 0 {
-                        let first_line =
-                            format!("FILE: {file_name} LINE: {}\n", self.comment_line_start);
+                        let first_line = format!(
+                            "[SOURCE FILE:](file:///{file_name}) LINE: {}\n",
+                            self.comment_line_start
+                        );
                         //let comment = self.comment;
                         self.write_out_to_file(
                             &folder_prefixes,
@@ -174,9 +177,9 @@ impl Comments {
         folder_prefixes: &str,
         file_extension: &str,
     ) {
+        let _ = remove_dir_all(doc_root);
         self.start_of_comment = start.to_string();
         self.current_state = State::CODE;
-        use walkdir::WalkDir;
 
         for entry in WalkDir::new(folder_name)
             .follow_links(true)
@@ -191,7 +194,7 @@ impl Comments {
                         println!("{_error:?}");
                     } else {
                         if self.current_state == State::ERROR {
-                            return;
+                            println!("Error occurred while parsing file: {}", name);
                         }
                         // to do log None case as file dissapeared after getting name
                     }
