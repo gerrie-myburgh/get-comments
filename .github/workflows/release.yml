@@ -41,11 +41,11 @@ jobs:
         
         # Rename to consistent name for releases
         if [ "${{ matrix.os }}" = "windows-latest" ]; then
-          cp "target/${{ matrix.target }}/release/get-comments.exe" "get-comments.exe"
+          cp "target/${{ matrix.target }}/release/get-comments.exe" "./release-artifacts/get-comments.exe"
         elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-          cp "target/${{ matrix.target }}/release/get-comments" "get-comments-linux"
+          cp "target/${{ matrix.target }}/release/get-comments" "./release-artifacts/get-comments-linux"
         elif [ "${{ matrix.os }}" = "macos-latest" ]; then
-          cp "target/${{ matrix.target }}/release/get-comments" "get-comments-macos"
+          cp "target/${{ matrix.target }}/release/get-comments" "./release-artifacts/get-comments-macos"
         fi
       shell: bash
 
