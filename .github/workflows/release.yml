@@ -40,9 +40,7 @@ jobs:
         cargo build --release --target ${{ matrix.target }}
         
         # Rename to consistent name for releases
-        if [ "${{ matrix.os }}" = "windows-latest" ]; then
-          cp "target/${{ matrix.target }}/release/get-comments.exe" "get-comments-win.exe"
-        elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+        if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
           cp "target/${{ matrix.target }}/release/get-comments" "get-comments-linux"
         elif [ "${{ matrix.os }}" = "macos-latest" ]; then
           cp "target/${{ matrix.target }}/release/get-comments" "get-comments-macos"
