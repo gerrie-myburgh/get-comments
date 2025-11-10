@@ -87,7 +87,7 @@ jobs:
       with:
         tag_name: ${{ steps.tag.outputs.tag }}
         name: "Build ${{ steps.tag.outputs.tag }}"
-        files: ./*
+        files: ./release-artifacts/**/*
         generate_release_notes: true
         draft: false
         prerelease: true
