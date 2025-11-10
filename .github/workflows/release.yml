@@ -41,12 +41,13 @@ jobs:
         
         # Rename to consistent name for releases
         if [ "${{ matrix.os }}" = "windows-latest" ]; then
-          cp "target/${{ matrix.target }}/release/get-comments.exe" "get-comments.exe"
+          cp "target/${{ matrix.target }}/release/get-comments.exe" "get-comments-win.exe"
         elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
           cp "target/${{ matrix.target }}/release/get-comments" "get-comments-linux"
         elif [ "${{ matrix.os }}" = "macos-latest" ]; then
           cp "target/${{ matrix.target }}/release/get-comments" "get-comments-macos"
         fi
+      shell: bash
 
     - name: List target directory (for debugging)
       run: ls -la target/${{ matrix.target }}/release/
