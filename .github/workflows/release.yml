@@ -78,7 +78,7 @@ jobs:
       id: tag
       run: |
         SHORT_SHA="${GITHUB_SHA:0:7}"
-        DATE=$(date +'%Y%m%d')
+        DATE=$(date +'%Y%m%d%H%M%S')
         NEW_TAG="build-${DATE}-${SHORT_SHA}"
         echo "tag=${NEW_TAG}" >> $GITHUB_OUTPUT
 
