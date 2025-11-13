@@ -166,6 +166,25 @@ impl Comments {
             }
             self.line_counter += 1u16;
         }
+        if self.current_state == State::COMMENT {
+            self.current_state = State::CODE;
+            if self.comment.len() > 0 {
+                let first_line = format!(
+                    "[SOURCE FILE:](file:///{file_name}) LINE: {}\n",
+                    self.comment_line_start
+                );
+                //let comment = self.comment;
+                self.write_out_to_file(
+                    &folder_prefixes,
+                    format!("{doc_root}.{}", self.current_comment_name).as_str(),
+                    first_line.as_str(),
+                    &self.comment,
+                )?;
+                self.comment_block_names
+                    .insert(self.current_comment_name.clone());
+                self.comment.clear();
+            }
+        }
         Ok(())
     }
 
