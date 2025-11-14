@@ -38,7 +38,6 @@ impl<'a> Comments<'a> {
         folder_prefixes: &Vec<&str>,
         file_path_and_name: &str,
         lines: &Vec<String>,
-        append: bool,
     ) -> Result<(), std::io::Error> {
         // file_name is a '.' delimited slice. Each subslice is a folder starting
         // from the current `working folder
@@ -50,30 +49,25 @@ impl<'a> Comments<'a> {
         if let Some(file) = path.pop() {
             create_dir_all(path.join("/"))?;
             path.push(file);
-            let the_path = path.join("/");
+            let path_and_file_name = format!("{}.md", path.join("/"));
             let file = OpenOptions::new()
-                .append(append)
-                .create(true) // Create file if it doesn't exist
-                .open(format!("{the_path}.md"))?;
+                .append(true)
+                .create(true)
+                .open(path_and_file_name)?;
             let mut writer = BufWriter::new(file);
-
             for line in lines {
                 writeln!(writer, "{}", line)?;
             }
+            writeln!(writer, "")?;
         }
         Ok(())
     }
 
     fn strip_number_in_str(&self, a_string: &String) -> Result<(u16, String), Error> {
-        println!("{}", a_string);
         let version_of_block = Regex::new(r"\[\d+\]$").unwrap();
         let mut version_number: Option<u16> = None;
         if let Some(capture) = version_of_block.captures(a_string) {
-            println!("{:?}", capture);
-
             if let Some(matched) = capture.get(0) {
-                println!("{:?}", matched.as_str());
-
                 if let Ok(version_num) = matched
                     .as_str()
                     .replace("[", "")
@@ -99,16 +93,14 @@ impl<'a> Comments<'a> {
         let mut error_string = String::new();
         self.comment_history.iter().for_each(
             |blocks_to_write: (&String, &BTreeMap<u16, Vec<String>>)| {
-                let mut append = false;
-                let file_name = blocks_to_write.0.as_str();
+                let file_name = blocks_to_write.0.as_str().trim();
 
                 for (_, value) in blocks_to_write.1 {
                     if let Err(error) =
-                        self.write_out_to_file(&self.folder_prefixes, file_name, value, append)
+                        self.write_out_to_file(&self.folder_prefixes, file_name, value)
                     {
                         error_string = error.to_string()
                     }
-                    append = true;
                 }
             },
         );
