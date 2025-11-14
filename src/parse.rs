@@ -1,6 +1,8 @@
-use std::collections::{HashMap, HashSet};
-use std::fs::{File, create_dir_all};
+use regex::Regex;
+use std::collections::{BTreeMap, HashMap, HashSet};
+use std::fs::{File, OpenOptions, create_dir_all, remove_dir_all};
 use std::io::{self, BufRead, BufWriter, Error, ErrorKind, Write};
+use walkdir::WalkDir;
 
 type Value = String;
 type CommentStart = String;
@@ -14,9 +16,10 @@ enum State {
 }
 
 #[derive(Default)]
-pub struct Comments {
+pub struct Comments<'a> {
+    folder_prefixes: Vec<&'a str>,
     current_state: State,
-    comment_history: HashMap<String, Vec<String>>,
+    comment_history: HashMap<String, BTreeMap<u16, Vec<String>>>,
     comment: Vec<Value>,
     start_of_comment: CommentStart,
     log_file: Option<io::BufWriter<File>>,
@@ -26,7 +29,7 @@ pub struct Comments {
     comment_line_start: u16,
 }
 
-impl Comments {
+impl<'a> Comments<'a> {
     ////EPIC comment.ITEM write to file
     ////# Write Comment Block To File
     ////Create the file path and write out the comment block to the file.
@@ -34,8 +37,8 @@ impl Comments {
         &self,
         folder_prefixes: &Vec<&str>,
         file_path_and_name: &str,
-        first_line: &str,
         lines: &Vec<String>,
+        append: bool,
     ) -> Result<(), std::io::Error> {
         // file_name is a '.' delimited slice. Each subslice is a folder starting
         // from the current `working folder
@@ -48,15 +51,62 @@ impl Comments {
             create_dir_all(path.join("/"))?;
             path.push(file);
             let the_path = path.join("/");
-            let file = File::create(format!("{the_path}.md"))?;
+            let file = OpenOptions::new()
+                .append(append)
+                .create(true) // Create file if it doesn't exist
+                .open(format!("{the_path}.md"))?;
             let mut writer = BufWriter::new(file);
 
-            writeln!(writer, "{}", first_line)?;
             for line in lines {
                 writeln!(writer, "{}", line)?;
             }
         }
         Ok(())
+    }
+
+    fn strip_number_in_str(&self, a_string: &String) -> Result<(u16, String), Error> {
+        let version_of_block = Regex::new(r"\[\d+\]$").unwrap();
+        let mut version_number: Option<u16> = None;
+        if let Some(capture) = version_of_block.captures(a_string) {
+            if let Some(matched) = capture.get(1) {
+                if let Ok(version_num) = matched.as_str().parse::<u16>() {
+                    version_number = Some(version_num);
+                }
+            }
+        }
+
+        if version_number.is_none() {
+            return Err(Error::new(
+                ErrorKind::Other,
+                "No version number exist in name of block",
+            ));
+        }
+        let block = version_of_block.replace_all(a_string, "");
+        Ok((version_number.unwrap(), block.as_ref().to_string()))
+    }
+
+    fn write_history(&self) -> Result<(), Error> {
+        let mut error_string = String::new();
+        self.comment_history.iter().for_each(
+            |blocks_to_write: (&String, &BTreeMap<u16, Vec<String>>)| {
+                let mut append = false;
+                let file_name = blocks_to_write.0.as_str();
+
+                for (_, value) in blocks_to_write.1 {
+                    if let Err(error) =
+                        self.write_out_to_file(&self.folder_prefixes, file_name, value, append)
+                    {
+                        error_string = error.to_string()
+                    }
+                    append = true;
+                }
+            },
+        );
+        if error_string.is_empty() {
+            Err(Error::new(ErrorKind::Other, error_string))
+        } else {
+            Ok(())
+        }
     }
 
     // check if the file-path and file name is valid wrt to the folder prefixes
@@ -125,11 +175,12 @@ impl Comments {
         &mut self,
         file_name: &str,
         doc_root: &str,
-        folder_prefix: &str,
+        folder_prefix: &'a str,
     ) -> Result<(), std::io::Error> {
         let file = File::open(file_name)?;
         let buf_reader = io::BufReader::new(file);
-        let folder_prefixes: Vec<&str> = folder_prefix.split(".").collect();
+        let folder_prefixes: Vec<&'a str> = folder_prefix.split(".").collect();
+        self.folder_prefixes = folder_prefixes;
         for line in buf_reader.lines() {
             let line = line?;
             let potential_comment_line = line.trim();
@@ -147,15 +198,30 @@ impl Comments {
                 if self.current_state == State::COMMENT {
                     self.current_state = State::CODE;
                     if self.comment.len() > 0 {
-                        let first_line =
-                            format!("FILE: {file_name} LINE: {}\n", self.comment_line_start);
-                        //let comment = self.comment;
-                        self.write_out_to_file(
-                            &folder_prefixes,
-                            format!("{doc_root}.{}", self.current_comment_name).as_str(),
-                            first_line.as_str(),
-                            &self.comment,
-                        )?;
+                        let mut all_block_lines = vec![format!(
+                            "[SOURCE FILE:](file:///{file_name}) LINE: {}\n",
+                            self.comment_line_start
+                        )];
+                        // keep history of comments
+                        all_block_lines.append(&mut self.comment);
+                        let comment_name = self.strip_number_in_str(&self.current_comment_name)?;
+
+                        let check_insert = self
+                            .comment_history
+                            .entry(comment_name.1)
+                            .or_insert_with(|| BTreeMap::new())
+                            .insert(comment_name.0, all_block_lines);
+
+                        if check_insert.is_some() {
+                            return Err(Error::new(
+                                ErrorKind::Other,
+                                format!(
+                                    "Duplicate version number exist in name of block {}",
+                                    comment_name.0
+                                ),
+                            ));
+                        }
+
                         self.comment_block_names
                             .insert(self.current_comment_name.clone());
                         self.comment.clear();
@@ -163,6 +229,38 @@ impl Comments {
                 }
             }
             self.line_counter += 1u16;
+        }
+        if self.current_state == State::COMMENT {
+            self.current_state = State::CODE;
+            if self.comment.len() > 0 {
+                let mut all_block_lines = vec![format!(
+                    "[SOURCE FILE:](file:///{file_name}) LINE: {}\n",
+                    self.comment_line_start
+                )];
+                // keep history of comments
+                all_block_lines.append(&mut self.comment);
+                let comment_name = self.strip_number_in_str(&self.current_comment_name)?;
+
+                let check_insert = self
+                    .comment_history
+                    .entry(comment_name.1)
+                    .or_insert_with(|| BTreeMap::new())
+                    .insert(comment_name.0, all_block_lines);
+
+                if check_insert.is_some() {
+                    return Err(Error::new(
+                        ErrorKind::Other,
+                        format!(
+                            "Duplicate version number exist in name of block {}",
+                            comment_name.0
+                        ),
+                    ));
+                }
+
+                self.comment_block_names
+                    .insert(self.current_comment_name.clone());
+                self.comment.clear();
+            }
         }
         Ok(())
     }
@@ -172,12 +270,12 @@ impl Comments {
         folder_name: &str,
         doc_root: &str,
         start: &str,
-        folder_prefixes: &str,
+        folder_prefixes: &'a str,
         file_extension: &str,
     ) {
+        let _ = remove_dir_all(doc_root);
         self.start_of_comment = start.to_string();
         self.current_state = State::CODE;
-        use walkdir::WalkDir;
 
         for entry in WalkDir::new(folder_name)
             .follow_links(true)
@@ -188,17 +286,21 @@ impl Comments {
             if entry.file_type().is_file() && file_name.ends_with(file_extension) {
                 if let Some(name) = entry.path().to_str() {
                     self.line_counter = 1u16;
-                    if let Err(_error) = self.parse_file(name, doc_root, folder_prefixes) {
-                        println!("{_error:?}");
+                    if let Err(error) = self.parse_file(name, doc_root, folder_prefixes) {
+                        println!("{error:?}");
                     } else {
                         if self.current_state == State::ERROR {
-                            return;
+                            println!("Error occurred while parsing file: {}", name);
                         }
                         // to do log None case as file dissapeared after getting name
                     }
                 }
             }
         }
+        // all files is processed to print out the history of self lines
+        if let Err(error) = self.write_history() {
+            println!("{error:?}");
+        };
     }
 }
 
