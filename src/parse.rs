@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fs::{File, create_dir_all};
 use std::io::{self, BufRead, BufWriter, Error, ErrorKind, Write};
 
@@ -16,6 +16,7 @@ enum State {
 #[derive(Default)]
 pub struct Comments {
     current_state: State,
+    comment_history: HashMap<String, Vec<String>>,
     comment: Vec<Value>,
     start_of_comment: CommentStart,
     log_file: Option<io::BufWriter<File>>,
