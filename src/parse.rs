@@ -30,7 +30,7 @@ pub struct Comments<'a> {
 }
 
 impl<'a> Comments<'a> {
-    ////EPIC comment.ITEM write to file
+    ////EPIC comment.ITEM write to file [0]
     ////# Write Comment Block To File
     ////Create the file path and write out the comment block to the file.
     fn write_out_to_file(
@@ -65,11 +65,21 @@ impl<'a> Comments<'a> {
     }
 
     fn strip_number_in_str(&self, a_string: &String) -> Result<(u16, String), Error> {
+        println!("{}", a_string);
         let version_of_block = Regex::new(r"\[\d+\]$").unwrap();
         let mut version_number: Option<u16> = None;
         if let Some(capture) = version_of_block.captures(a_string) {
-            if let Some(matched) = capture.get(1) {
-                if let Ok(version_num) = matched.as_str().parse::<u16>() {
+            println!("{:?}", capture);
+
+            if let Some(matched) = capture.get(0) {
+                println!("{:?}", matched.as_str());
+
+                if let Ok(version_num) = matched
+                    .as_str()
+                    .replace("[", "")
+                    .replace("]", "")
+                    .parse::<u16>()
+                {
                     version_number = Some(version_num);
                 }
             }
@@ -139,7 +149,7 @@ impl<'a> Comments<'a> {
         Ok(())
     }
 
-    ////EPIC comment.ITEM start
+    ////EPIC comment.ITEM start [0]
     ////# Parse Comment Start
     ////This is the first line of a comment start. Check that this line has a name
     ////and that this name is unique. Record the location in the source where the
@@ -151,7 +161,7 @@ impl<'a> Comments<'a> {
         Ok(())
     }
 
-    ////EPIC comment.ITEM line
+    ////EPIC comment.ITEM line [0]
     ////# Parse a Comment Line
     ////If the comment line is the first line in a comment then record as then check as first comment
     ////
@@ -167,7 +177,7 @@ impl<'a> Comments<'a> {
         Ok(())
     }
 
-    ////EPIC comment.ITEM file
+    ////EPIC comment.ITEM file [0]
     ////# Parse File For Comments
     ////Open the file iff it exist. Read the file line by line and check if the line
     ////is a comment. If the line is a comment then record it as a comment
@@ -208,7 +218,7 @@ impl<'a> Comments<'a> {
 
                         let check_insert = self
                             .comment_history
-                            .entry(comment_name.1)
+                            .entry(format!("{doc_root}.{}", comment_name.1))
                             .or_insert_with(|| BTreeMap::new())
                             .insert(comment_name.0, all_block_lines);
 
@@ -243,7 +253,7 @@ impl<'a> Comments<'a> {
 
                 let check_insert = self
                     .comment_history
-                    .entry(comment_name.1)
+                    .entry(format!("{doc_root}.{}", comment_name.1))
                     .or_insert_with(|| BTreeMap::new())
                     .insert(comment_name.0, all_block_lines);
 
