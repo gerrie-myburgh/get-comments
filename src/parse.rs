@@ -30,9 +30,9 @@ pub struct Comments<'a> {
 }
 
 impl<'a> Comments<'a> {
-    ////EPIC comment.ITEM write to file [0]
-    ////# Write Comment Block To File
-    ////Create the file path and write out the comment block to the file.
+    //#EPIC comment.ITEM write to file [0]
+    //## Write Comment Block To File
+    //#Create the file path and write out the comment block to the file.
     fn write_out_to_file(
         &self,
         folder_prefixes: &Vec<&str>,
@@ -141,11 +141,11 @@ impl<'a> Comments<'a> {
         Ok(())
     }
 
-    ////EPIC comment.ITEM start [0]
-    ////# Parse Comment Start
-    ////This is the first line of a comment start. Check that this line has a name
-    ////and that this name is unique. Record the location in the source where the
-    ////comment starts.
+    //#EPIC comment.ITEM start [0]
+    //## Parse Comment Start
+    //#This is the first line of a comment start. Check that this line has a name
+    //#and that this name is unique. Record the location in the source where the
+    //#comment starts.
     fn parse_comment_start(&mut self, line: &str) -> Result<(), String> {
         let comment_name = line[self.start_of_comment.len()..].trim();
         self.comment_line_start = self.line_counter + 1;
@@ -153,11 +153,11 @@ impl<'a> Comments<'a> {
         Ok(())
     }
 
-    ////EPIC comment.ITEM line [0]
-    ////# Parse a Comment Line
-    ////If the comment line is the first line in a comment then record as then check as first comment
-    ////
-    ////else record the line as part of the body of the comment.
+    //#EPIC comment.ITEM line [0]
+    //## Parse a Comment Line
+    //#If the comment line is the first line in a comment then record as then check as first comment
+    //#
+    //#else record the line as part of the body of the comment.
     fn parse_comment(&mut self, line: &str) -> Result<(), String> {
         if self.current_state == State::CODE {
             self.current_state = State::COMMENT;
@@ -169,10 +169,10 @@ impl<'a> Comments<'a> {
         Ok(())
     }
 
-    ////EPIC comment.ITEM file [0]
-    ////# Parse File For Comments
-    ////Open the file iff it exist. Read the file line by line and check if the line
-    ////is a comment. If the line is a comment then record it as a comment
+    //#EPIC comment.ITEM file [0]
+    //## Parse File For Comments
+    //#Open the file iff it exist. Read the file line by line and check if the line
+    //#is a comment. If the line is a comment then record it as a comment
     fn parse_file(
         &mut self,
         file_name: &str,
