@@ -111,7 +111,7 @@ impl<'a> Comments<'a> {
         }
     }
 
-    // check if the file-path and file name is valid wrt to the folder prefixes
+    // check if the file-path and file name is valid with respect to the folder prefixes
     fn is_valid_folder_path(
         &self,
         folder_prefixes: &Vec<&str>,
@@ -169,6 +169,44 @@ impl<'a> Comments<'a> {
         Ok(())
     }
 
+    // Write out all blocks encountered when the last file is encountered
+    fn write_out_all_history(
+        &mut self,
+        file_name: &str,
+        doc_root: &str,
+    ) -> Result<(), std::io::Error> {
+        self.current_state = State::CODE;
+        if self.comment.len() > 0 {
+            let mut all_block_lines = vec![format!(
+                "[SOURCE FILE:](file:///{file_name}) LINE: {}\n",
+                self.comment_line_start
+            )];
+            // keep history of comments
+            all_block_lines.append(&mut self.comment);
+            let comment_name = self.strip_number_in_str(&self.current_comment_name)?;
+
+            let check_insert = self
+                .comment_history
+                .entry(format!("{doc_root}.{}", comment_name.1))
+                .or_insert_with(|| BTreeMap::new())
+                .insert(comment_name.0, all_block_lines);
+
+            if check_insert.is_some() {
+                return Err(Error::new(
+                    ErrorKind::Other,
+                    format!(
+                        "Duplicate version number exist in name of block {}",
+                        comment_name.0
+                    ),
+                ));
+            }
+
+            self.comment_block_names
+                .insert(self.current_comment_name.clone());
+            self.comment.clear();
+        }
+        Ok(())
+    }
     //#EPIC comment.ITEM file [0]
     //## Parse File For Comments
     //#Open the file iff it exist. Read the file line by line and check if the line
@@ -198,71 +236,13 @@ impl<'a> Comments<'a> {
                 }
             } else {
                 if self.current_state == State::COMMENT {
-                    self.current_state = State::CODE;
-                    if self.comment.len() > 0 {
-                        let mut all_block_lines = vec![format!(
-                            "[SOURCE FILE:](file:///{file_name}) LINE: {}\n",
-                            self.comment_line_start
-                        )];
-                        // keep history of comments
-                        all_block_lines.append(&mut self.comment);
-                        let comment_name = self.strip_number_in_str(&self.current_comment_name)?;
-
-                        let check_insert = self
-                            .comment_history
-                            .entry(format!("{doc_root}.{}", comment_name.1))
-                            .or_insert_with(|| BTreeMap::new())
-                            .insert(comment_name.0, all_block_lines);
-
-                        if check_insert.is_some() {
-                            return Err(Error::new(
-                                ErrorKind::Other,
-                                format!(
-                                    "Duplicate version number exist in name of block {}",
-                                    comment_name.0
-                                ),
-                            ));
-                        }
-
-                        self.comment_block_names
-                            .insert(self.current_comment_name.clone());
-                        self.comment.clear();
-                    }
+                    self.write_out_all_history(file_name, doc_root)?;
                 }
             }
             self.line_counter += 1u16;
         }
         if self.current_state == State::COMMENT {
-            self.current_state = State::CODE;
-            if self.comment.len() > 0 {
-                let mut all_block_lines = vec![format!(
-                    "[SOURCE FILE:](file:///{file_name}) LINE: {}\n",
-                    self.comment_line_start
-                )];
-                // keep history of comments
-                all_block_lines.append(&mut self.comment);
-                let comment_name = self.strip_number_in_str(&self.current_comment_name)?;
-
-                let check_insert = self
-                    .comment_history
-                    .entry(format!("{doc_root}.{}", comment_name.1))
-                    .or_insert_with(|| BTreeMap::new())
-                    .insert(comment_name.0, all_block_lines);
-
-                if check_insert.is_some() {
-                    return Err(Error::new(
-                        ErrorKind::Other,
-                        format!(
-                            "Duplicate version number exist in name of block {}",
-                            comment_name.0
-                        ),
-                    ));
-                }
-
-                self.comment_block_names
-                    .insert(self.current_comment_name.clone());
-                self.comment.clear();
-            }
+            self.write_out_all_history(file_name, doc_root)?;
         }
         Ok(())
     }
