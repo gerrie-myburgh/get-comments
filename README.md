@@ -35,7 +35,7 @@ This created the following structure in the file system:
 
 ![folder structure](folder-structure.png)
 
-The file _ITEM line items_ is ./testdata/sales/PERSON Jan Pogompoel/INVOICE 001/***ITEM line items.md***. The content of the file is the following:
+The file _ITEM line items_ is ./testdata/sales/PERSON Jan Pogompoel/INVOICE 001/***ITEM line items.md***. The content of this file is the following:
 
 ```
 [SOURCE FILE:](file:///./text-test-data2.txt) LINE: 5
@@ -56,6 +56,6 @@ blou een
 
 # Mat
 ```
-You would notice that the content has the references to several other line blocks. The order of there line blocks in file is determined by the order number appended to the end of the first line in the line block. These are of the format `\[\d+\]`. For example [0],[1],[2],...
+You would notice that the content has the references to several other line blocks. The order of there line blocks in file is determined by the order number appended to the end of the first line in the line block. The format of test are `\[\d+\]`. For example [0],[1],[2],...
 
 The number will determine where in the file these line blocks will appear. Each of these sequence numbers must be unique for a given file and must be an unsigned 16 bit number.
