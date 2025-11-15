@@ -125,7 +125,7 @@ impl<'a> Comments<'a> {
     /// - `a_string`: Comment block name string that may contain Sequence suffix
     ///
     /// # Returns:
-    /// - `Ok((u16, String))` - Tuple containing (version_number, sanitized_block_name)
+    /// - `Ok((u16, String))` - Tuple containing (sequence_number, sanitized_block_name)
     /// - `Err(Error)` - If no Sequence number is found in the string
     ///
     /// # Error Conditions:
@@ -144,7 +144,7 @@ impl<'a> Comments<'a> {
     /// - Sequence numbers are used to order comment blocks chronologically in output
     fn strip_number_in_str(&self, a_string: &String) -> Result<(u16, String), Error> {
         let version_of_block = Regex::new(r"\[\d+\]$").unwrap();
-        let mut version_number: Option<u16> = None;
+        let mut sequence_number: Option<u16> = None;
         if let Some(capture) = version_of_block.captures(a_string) {
             if let Some(matched) = capture.get(0) {
                 if let Ok(version_num) = matched
@@ -153,19 +153,19 @@ impl<'a> Comments<'a> {
                     .replace("]", "")
                     .parse::<u16>()
                 {
-                    version_number = Some(version_num);
+                    sequence_number = Some(version_num);
                 }
             }
         }
 
-        if version_number.is_none() {
+        if sequence_number.is_none() {
             return Err(Error::new(
                 ErrorKind::Other,
                 "No Sequence number exist in name of block",
             ));
         }
         let block = version_of_block.replace_all(a_string, "");
-        Ok((version_number.unwrap(), block.as_ref().to_string()))
+        Ok((sequence_number.unwrap(), block.as_ref().to_string()))
     }
     /// Writes all accumulated comment blocks from history to their respective documentation files.
     ///
