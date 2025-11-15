@@ -56,6 +56,12 @@ blou een
 
 # Mat
 ```
-You would notice that the content has the references to several other line blocks. The order of there line blocks in file is determined by the order number appended to the end of the first line in the line block. The format of test are `\[\d+\]`. For example [0],[1],[2],...
+You would notice that the content has the references to several other line blocks. The order of these line blocks in the file is determined by the order number appended to the end of the first line in the line block. The format of test are `\[\d+\]`. For example [0],[1],[2],...
 
-The number will determine where in the file these line blocks will appear. Each of these sequence numbers must be unique for a given file and must be an unsigned 16 bit number.
+The number will determine where in the file these line blocks will appear. Each of these sequence numbers must be unique for a given file and must be an unsigned 16 bit number and is required.
+
+## Example
+get-comments -dir '/media/gerrie/Media/Workspace/rust/get-comments/src' -work 'documents' -start //# -path EPIC.ITEM.TEST -ext .rs
+
+#### Explanation
+Look in all the rust (.rs) files at `/media/gerrie/Media/Workspace/rust/get-comments/src` recursive for all lines starting with `//#`. Create folders and files in die `documents` folder in die current working folder. All folders and files must start with either 'EPIC', 'ITEM' or 'TEST' with a depth of at mose 3 under `documents`.
