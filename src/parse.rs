@@ -119,7 +119,7 @@ impl<'a> Comments<'a> {
     /// 1. **Regex Matching**: Finds Sequence number pattern at end of string
     /// 2. **Sequence Parsing**: Extracts number from brackets and converts to u16
     /// 3. **Validation**: Ensures Sequence number exists and is valid
-    /// 4. **Name Sanitization**: Removes Sequence suffix to get clean block name
+    /// 4. **Name Sanitized**: Removes Sequence suffix to get clean block name
     ///
     /// # Parameters:
     /// - `a_string`: Comment block name string that may contain Sequence suffix
