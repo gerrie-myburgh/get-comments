@@ -69,8 +69,8 @@ impl<'a> Comments<'a> {
     /// - **Blank Line**: Adds a trailing blank line to separate comment blocks
     ///
     /// # Note:
-    /// - This function is called by `write_history` for each comment block version
-    /// - Multiple versions of the same comment block are appended to the same file
+    /// - This function is called by `write_history` for each comment block Sequence
+    /// - Multiple Sequences of the same comment block are appended to the same file
     /// - The directory structure mirrors the hierarchical organization of comment blocks
     /// - File operations are atomic within this function call
     fn write_out_to_file(
@@ -102,46 +102,46 @@ impl<'a> Comments<'a> {
         }
         Ok(())
     }
-    /// Extracts version number from comment block names and returns the sanitized name.
+    /// Extracts Sequence number from comment block names and returns the sanitized name.
     ///
     /// This function parses comment block names that follow the pattern "BlockName [N]"
-    /// where N is a version number in brackets at the end of the string. It extracts
-    /// both the version number and the base block name for separate handling.
+    /// where N is a Sequence number in brackets at the end of the string. It extracts
+    /// both the Sequence number and the base block name for separate handling.
     ///
     /// # Pattern Matching:
     /// - **Regex Pattern**: `r"\[\d+\]$"` - matches numbers in brackets at string end
     /// - **Examples**:
-    ///   - "EPIC.Get Lines.ITEM Test Block [1]" → version=1, name="EPIC.Get Lines.ITEM Test Block"
-    ///   - "Simple Comment [42]" → version=42, name="Simple Comment"
-    ///   - "No Version" → Error: "No version number exist in name of block"
+    ///   - "EPIC.Get Lines.ITEM Test Block [1]" → Sequence=1, name="EPIC.Get Lines.ITEM Test Block"
+    ///   - "Simple Comment [42]" → Sequence=42, name="Simple Comment"
+    ///   - "No Sequence" → Error: "No Sequence number exist in name of block"
     ///
     /// # Extraction Process:
-    /// 1. **Regex Matching**: Finds version number pattern at end of string
-    /// 2. **Version Parsing**: Extracts number from brackets and converts to u16
-    /// 3. **Validation**: Ensures version number exists and is valid
-    /// 4. **Name Sanitization**: Removes version suffix to get clean block name
+    /// 1. **Regex Matching**: Finds Sequence number pattern at end of string
+    /// 2. **Sequence Parsing**: Extracts number from brackets and converts to u16
+    /// 3. **Validation**: Ensures Sequence number exists and is valid
+    /// 4. **Name Sanitization**: Removes Sequence suffix to get clean block name
     ///
     /// # Parameters:
-    /// - `a_string`: Comment block name string that may contain version suffix
+    /// - `a_string`: Comment block name string that may contain Sequence suffix
     ///
     /// # Returns:
     /// - `Ok((u16, String))` - Tuple containing (version_number, sanitized_block_name)
-    /// - `Err(Error)` - If no version number is found in the string
+    /// - `Err(Error)` - If no Sequence number is found in the string
     ///
     /// # Error Conditions:
-    /// - No version number pattern found at the end of the string
-    /// - Version number cannot be parsed as u16 (though regex ensures it's numeric)
+    /// - No Sequence number pattern found at the end of the string
+    /// - Sequence number cannot be parsed as u16 (though regex ensures it's numeric)
     ///
     /// # Use Cases:
-    /// - Used by `write_out_all_history` to separate version from block name for storage
-    /// - Enables multiple versions of the same comment block to be tracked and organized
+    /// - Used by `write_out_all_history` to separate Sequence from block name for storage
+    /// - Enables multiple Sequences of the same comment block to be tracked and organized
     /// - Supports versioned documentation where blocks can be updated over time
     ///
     /// # Note:
-    /// - The version number must be at the very end of the string in brackets
-    /// - The regex ensures only numeric values are accepted as version numbers
-    /// - This enables the system to maintain version history for comment blocks
-    /// - Version numbers are used to order comment blocks chronologically in output
+    /// - The Sequence number must be at the very end of the string in brackets
+    /// - The regex ensures only numeric values are accepted as Sequence numbers
+    /// - This enables the system to maintain Sequence history for comment blocks
+    /// - Sequence numbers are used to order comment blocks chronologically in output
     fn strip_number_in_str(&self, a_string: &String) -> Result<(u16, String), Error> {
         let version_of_block = Regex::new(r"\[\d+\]$").unwrap();
         let mut version_number: Option<u16> = None;
@@ -161,7 +161,7 @@ impl<'a> Comments<'a> {
         if version_number.is_none() {
             return Err(Error::new(
                 ErrorKind::Other,
-                "No version number exist in name of block",
+                "No Sequence number exist in name of block",
             ));
         }
         let block = version_of_block.replace_all(a_string, "");
@@ -174,7 +174,7 @@ impl<'a> Comments<'a> {
     /// their designated markdown files in the documentation hierarchy.
     ///
     /// # Process Flow:
-    /// 1. **Iteration**: Loops through all comment blocks organized by file path and version
+    /// 1. **Iteration**: Loops through all comment blocks organized by file path and Sequence
     /// 2. **File Writing**: For each comment block, calls `write_out_to_file` to create/append
     ///    to the corresponding markdown file
     /// 3. **Error Collection**: Accumulates any file writing errors without stopping the process
@@ -182,8 +182,8 @@ impl<'a> Comments<'a> {
     ///
     /// # Data Structure Navigation:
     /// - **Outer HashMap**: Keyed by file path (e.g., "doc_root.EPIC.ITEM")
-    /// - **Inner BTreeMap**: Keyed by version number, maintains comment blocks in version order
-    /// - **Value**: Vector of comment lines for each version of a comment block
+    /// - **Inner BTreeMap**: Keyed by Sequence number, maintains comment blocks in Sequence order
+    /// - **Value**: Vector of comment lines for each Sequence of a comment block
     ///
     /// # Error Handling Strategy:
     /// - **Non-blocking**: Continues processing all files even if some fail
@@ -197,10 +197,10 @@ impl<'a> Comments<'a> {
     /// # Note:
     /// - This function is typically called at the end of `comment_in_files` after all
     ///   source files have been processed
-    /// - The use of BTreeMap ensures comment blocks are written in version order
+    /// - The use of BTreeMap ensures comment blocks are written in Sequence order
     /// - File paths are constructed from the hierarchical comment block names
-    /// - Multiple versions of the same comment block are written to the same file
-    ///   in version order
+    /// - Multiple Sequences of the same comment block are written to the same file
+    ///   in Sequence order
     fn write_history(&self) -> Result<(), Error> {
         let mut error_string = String::new();
         self.comment_history.iter().for_each(
@@ -317,7 +317,7 @@ impl<'a> Comments<'a> {
     ///   the line that was just processed, and we want the starting line of the comment
     /// - This function is called exclusively by `parse_comment` during state transitions
     /// - The extracted comment block name will later be processed by `strip_number_in_str`
-    ///   to separate version numbers from the actual block name
+    ///   to separate Sequence numbers from the actual block name
     fn parse_comment_start(&mut self, line: &str) -> Result<(), String> {
         let comment_name = line[self.start_of_comment.len()..].trim();
         self.comment_line_start = self.line_counter + 1;
@@ -377,16 +377,16 @@ impl<'a> Comments<'a> {
     /// # Process Flow:
     /// 1. **State Transition**: Returns parser state from COMMENT to CODE
     /// 2. **Block Preparation**: Adds source file metadata and line number to comment block
-    /// 3. **Version Extraction**: Parses version number from comment block name using regex
+    /// 3. **Sequence Extraction**: Parses Sequence number from comment block name using regex
     /// 4. **History Storage**: Stores the comment block in the hierarchical comment history
-    /// 5. **Duplicate Prevention**: Checks for duplicate version numbers in the same block name
+    /// 5. **Duplicate Prevention**: Checks for duplicate Sequence numbers in the same block name
     /// 6. **Cleanup**: Clears the current comment buffer for the next block
     ///
     /// # Key Operations:
     /// - **Metadata Addition**: Prepends source file path and line number to comment block
-    /// - **Version Management**: Extracts and validates version numbers from block names
-    /// - **Hierarchical Storage**: Organizes comments by documentation path and version
-    /// - **Duplicate Detection**: Ensures unique version numbers per comment block name
+    /// - **Sequence Management**: Extracts and validates Sequence numbers from block names
+    /// - **Hierarchical Storage**: Organizes comments by documentation path and Sequence
+    /// - **Duplicate Detection**: Ensures unique Sequence numbers per comment block name
     ///
     /// # Parameters:
     /// - `file_name`: Source file path where the comment block was found
@@ -394,14 +394,14 @@ impl<'a> Comments<'a> {
     ///
     /// # Returns:
     /// - `Ok(())` on successful storage
-    /// - `Err(std::io::Error)` if duplicate version numbers are detected
+    /// - `Err(std::io::Error)` if duplicate Sequence numbers are detected
     ///
     /// # Error Conditions:
-    /// - Duplicate version numbers in the same comment block name
-    /// - Invalid version number format in comment block name
+    /// - Duplicate Sequence numbers in the same comment block name
+    /// - Invalid Sequence number format in comment block name
     ///
     /// # Note:
-    /// The function uses BTreeMap to maintain comment blocks in version order and
+    /// The function uses BTreeMap to maintain comment blocks in Sequence order and
     /// HashSet to ensure unique comment block names across the entire codebase.
     fn write_out_all_history(
         &mut self,
@@ -428,7 +428,7 @@ impl<'a> Comments<'a> {
                 return Err(Error::new(
                     ErrorKind::Other,
                     format!(
-                        "Duplicate version number exist in name of block {}",
+                        "Duplicate Sequence number exist in name of block {}",
                         comment_name.0
                     ),
                 ));
