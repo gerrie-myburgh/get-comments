@@ -30,7 +30,7 @@ pub struct Comments<'a> {
 }
 
 impl<'a> Comments<'a> {
-    //#EPIC comment.ITEM write to file [0]
+    //#EPIC Get Lines.ITEM write to file [0]
     //## Write Comment Block To File
     //#Create the file path and write out the comment block to the file.
     fn write_out_to_file(
@@ -39,7 +39,7 @@ impl<'a> Comments<'a> {
         file_path_and_name: &str,
         lines: &Vec<String>,
     ) -> Result<(), std::io::Error> {
-        // file_name is a '.' delimited slice. Each subslice is a folder starting
+        // file_name is a '.' delimited slice. Each slice is a folder starting
         // from the current `working folder
         let mut path: Vec<&str> = file_path_and_name.split(".").collect();
         if let Err(message) = self.is_valid_folder_path(folder_prefixes, file_path_and_name) {
@@ -141,7 +141,7 @@ impl<'a> Comments<'a> {
         Ok(())
     }
 
-    //#EPIC comment.ITEM start [0]
+    //#EPIC Get Lines.ITEM start [0]
     //## Parse Comment Start
     //#This is the first line of a comment start. Check that this line has a name
     //#and that this name is unique. Record the location in the source where the
@@ -153,11 +153,11 @@ impl<'a> Comments<'a> {
         Ok(())
     }
 
-    //#EPIC comment.ITEM line [0]
+    //#EPIC Get Lines.ITEM line [0]
     //## Parse a Comment Line
     //#If the comment line is the first line in a comment then record as then check as first comment
     //#
-    //#else record the line as part of the body of the comment.
+    //#else record the line as part of the body of the consecutive.
     fn parse_comment(&mut self, line: &str) -> Result<(), String> {
         if self.current_state == State::CODE {
             self.current_state = State::COMMENT;
@@ -207,10 +207,10 @@ impl<'a> Comments<'a> {
         }
         Ok(())
     }
-    //#EPIC comment.ITEM file [0]
+    //#EPIC Get Lines.ITEM file [0]
     //## Parse File For Comments
     //#Open the file iff it exist. Read the file line by line and check if the line
-    //#is a comment. If the line is a comment then record it as a comment
+    //#is a consecutive. If the line is a comment then record it as a comment
     fn parse_file(
         &mut self,
         file_name: &str,
@@ -274,7 +274,7 @@ impl<'a> Comments<'a> {
                         if self.current_state == State::ERROR {
                             println!("Error occurred while parsing file: {}", name);
                         }
-                        // to do log None case as file dissapeared after getting name
+                        // to do log None case as file is deleted while getting scanned
                     }
                 }
             }

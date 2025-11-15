@@ -1,10 +1,15 @@
 mod parse;
 use cli_command::parse_command_line;
 
-//#EPIC comment [0]
-//## Get Comments In Rust Files
-//#Scan the source folder recursivly for rust source files and extract all the business rules
-//#comment blocks then put these in .md files.
+//#EPIC Get Lines [0]
+//## Get lines from text files and put the line blocks into Markdown files.
+//#A _line block_ is any number number of consecutive lines that starts with the `start` string,
+//#an example is a start string of `//#` and an example line ` //# some text...`.
+//#
+//#The start line of a block must contain the name of the path and file name along with the block number.
+//#The block number will determine the location in the md file where line blocks with the same path
+//#and file name. This block number will be an unsigned number.
+//#
 fn main() {
     if let Ok(cli) = parse_command_line() {
         let some_dir = cli.get_argument("dir");
