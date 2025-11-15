@@ -63,5 +63,6 @@ The number will determine where in the file these line blocks will appear. Each 
 ## Example
 get-comments -dir '/media/gerrie/Media/Workspace/rust/get-comments/src' -work 'documents' -start //# -path EPIC.ITEM.TEST -ext .rs
 
-#### Explanation
+_Explanation of example_
+
 Look in all the rust (.rs) files at `/media/gerrie/Media/Workspace/rust/get-comments/src` recursive for all lines starting with `//#`. Create folders and files in die `documents` folder in die current working folder. All folders and files must start with either 'EPIC', 'ITEM' or 'TEST' with a depth of at mose 3 under `documents`.
