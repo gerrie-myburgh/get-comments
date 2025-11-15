@@ -32,6 +32,7 @@ Example 2.
 _.**PERSON** Jan Pogompoel.**INVOICE** 001.**ITEM** line items [0]_
 
 This created the following structure in the file system:
+
 ![folder structure](folder-structure.png)
 
 The file _ITEM line items_ is ./testdata/sales/PERSON Jan Pogompoel/INVOICE 001/***ITEM line items.md***. The content of the file is the following:
