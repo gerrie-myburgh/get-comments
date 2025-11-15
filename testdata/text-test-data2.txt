@@ -1,0 +1,18 @@
+.PERSON Jan Pogompoel.INVOICE 001 [0]
+.## 2025-11-15
+
+.PERSON Jan Pogompoel.INVOICE 001.ITEM line items [0]
+.# Borsel
+.blou een
+oakds foafj a[ofeu a[eofu a[sfo sf. afk oaksf okfj oaksfj aofkedfljl jf. falkf hafkl ljfl;ajkfls j.
+.PERSON Jan Pogompoel.INVOICE 001.ITEM line items [1]
+.# vlos
+.20 meter
+oakds foafj a[ofeu a[eofu a[sfo sf. afk oaksf okfj oaksfj aofkedfljl jf. falkf hafkl ljfl;ajkfls j.
+.PERSON Jan Pogompoel.INVOICE 001.ITEM line items [2]
+.# Seep
+oakds foafj a[ofeu a[eofu a[sfo sf. afk oaksf okfj oaksfj aofkedfljl jf. falkf hafkl ljfl;ajkfls j.
+.PERSON Jan Pogompoel.INVOICE 001.ITEM line items [3]
+.# Mat
+oakds foafj a[ofeu a[eofu a[sfo sf. afk oaksf okfj oaksfj aofkedfljl jf. falkf hafkl ljfl;ajkfls j.
+

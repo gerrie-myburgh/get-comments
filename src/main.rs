@@ -1,10 +1,10 @@
 mod parse;
 use cli_command::parse_command_line;
 
-////EPIC comment [0]
-////# Get Comments In Rust Files
-////Scan the source folder recursivly for rust source files and extract all the business rules
-////comment blocks then put these in .md files.
+//#EPIC comment [0]
+//## Get Comments In Rust Files
+//#Scan the source folder recursivly for rust source files and extract all the business rules
+//#comment blocks then put these in .md files.
 fn main() {
     if let Ok(cli) = parse_command_line() {
         let some_dir = cli.get_argument("dir");

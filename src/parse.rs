@@ -104,7 +104,7 @@ impl<'a> Comments<'a> {
                 }
             },
         );
-        if error_string.is_empty() {
+        if !error_string.is_empty() {
             Err(Error::new(ErrorKind::Other, error_string))
         } else {
             Ok(())
@@ -193,7 +193,7 @@ impl<'a> Comments<'a> {
                         let log = self.log_file.as_mut().unwrap();
                         log.write_all(message.as_bytes())?;
                     } else {
-                        println!("{message}");
+                        println!("parse file {message}");
                     }
                 }
             } else {
@@ -289,7 +289,7 @@ impl<'a> Comments<'a> {
                 if let Some(name) = entry.path().to_str() {
                     self.line_counter = 1u16;
                     if let Err(error) = self.parse_file(name, doc_root, folder_prefixes) {
-                        println!("{error:?}");
+                        println!("comment in file {error:?}");
                     } else {
                         if self.current_state == State::ERROR {
                             println!("Error occurred while parsing file: {}", name);
@@ -301,7 +301,7 @@ impl<'a> Comments<'a> {
         }
         // all files is processed to print out the history of self lines
         if let Err(error) = self.write_history() {
-            println!("{error:?}");
+            println!("write history {error:?}");
         };
     }
 }
@@ -312,7 +312,7 @@ fn test_if_file_path_is_valid() {
     let mut comments = Comments::default();
     let path = &vec!["EPIC", "ITEM", "TEST"];
     if let Err(error) = comments.is_valid_folder_path(path, "EPIC epic.ITEM item.TEST test") {
-        println!("{error}");
+        println!("test {error}");
     }
     comments.current_comment_name = "EPIC epic.ITEM item.TEST test".to_string();
     comments
