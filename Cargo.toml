@@ -5,4 +5,12 @@ edition = "2024"
 
 [dependencies]
 cli-command = "0.1.0"
+regex = "1.12.2"
 walkdir = "2.5.0"
+
+[profile.release]
+opt-level = "z"  # Optimize for size instead of speed ("s" for balance)
+lto = true       # Link Time Optimization
+codegen-units = 1 # Slower builds but better optimization
+panic = "abort"  # Reduce panic handling overhead
+strip = true     # Strip debug symbols (alternative: use strip command)
