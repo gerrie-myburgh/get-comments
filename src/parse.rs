@@ -1,4 +1,5 @@
 use regex::Regex;
+use std::borrow::Cow;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs::{File, OpenOptions, create_dir_all, remove_dir_all};
 use std::io::{self, BufRead, BufWriter, Error, ErrorKind, Write};
@@ -102,46 +103,31 @@ impl<'a> Comments<'a> {
         }
         Ok(())
     }
-    /// Extracts Sequence number from comment block names and returns the sanitized name.
+    /// Extracts and separates sequence numbers from comment block names.
     ///
-    /// This function parses comment block names that follow the pattern "BlockName [N]"
-    /// where N is a Sequence number in brackets at the end of the string. It extracts
-    /// both the Sequence number and the base block name for separate handling.
+    /// This function processes comment block names that may contain sequence numbers
+    /// in the format `[number]` at the end of the string. It extracts the sequence number
+    /// and returns both the number and the cleaned block name.
     ///
-    /// # Pattern Matching:
-    /// - **Regex Pattern**: `r"\[\d+\]$"` - matches numbers in brackets at string end
-    /// - **Examples**:
-    ///   - "EPIC.Get Lines.ITEM Test Block [1]" → Sequence=1, name="EPIC.Get Lines.ITEM Test Block"
-    ///   - "Simple Comment [42]" → Sequence=42, name="Simple Comment"
-    ///   - "No Sequence" → Error: "No Sequence number exist in name of block"
+    /// # Parameters
+    /// - `a_string`: A string reference containing the comment block name that may
+    ///   end with a sequence number in brackets (e.g., "MyCommentBlock[1]")
     ///
-    /// # Extraction Process:
-    /// 1. **Regex Matching**: Finds Sequence number pattern at end of string
-    /// 2. **Sequence Parsing**: Extracts number from brackets and converts to u16
-    /// 3. **Validation**: Ensures Sequence number exists and is valid
-    /// 4. **Name Sanitized**: Removes Sequence suffix to get clean block name
+    /// # Returns
+    /// - `Ok((u16, String))`: A tuple containing the extracted sequence number and
+    ///   the cleaned block name without the sequence suffix
+    /// - `Err(Error)`: If no sequence number is found in the string
     ///
-    /// # Parameters:
-    /// - `a_string`: Comment block name string that may contain Sequence suffix
+    /// # Examples
+    /// - Input: "MyCommentBlock[42]" → Output: (42, "MyCommentBlock")
+    /// - Input: "AnotherBlock[1]" → Output: (1, "AnotherBlock")
+    /// - Input: "BlockWithoutNumber" → Error: "No Sequence number exist in name of block"
     ///
-    /// # Returns:
-    /// - `Ok((u16, String))` - Tuple containing (sequence_number, sanitized_block_name)
-    /// - `Err(Error)` - If no Sequence number is found in the string
-    ///
-    /// # Error Conditions:
-    /// - No Sequence number pattern found at the end of the string
-    /// - Sequence number cannot be parsed as u16 (though regex ensures it's numeric)
-    ///
-    /// # Use Cases:
-    /// - Used by `write_out_all_history` to separate Sequence from block name for storage
-    /// - Enables multiple Sequences of the same comment block to be tracked and organized
-    /// - Supports versioned documentation where blocks can be updated over time
-    ///
-    /// # Note:
-    /// - The Sequence number must be at the very end of the string in brackets
-    /// - The regex ensures only numeric values are accepted as Sequence numbers
-    /// - This enables the system to maintain Sequence history for comment blocks
-    /// - Sequence numbers are used to order comment blocks chronologically in output
+    /// # Implementation Details
+    /// - Uses a regular expression to match `[number]` patterns at the end of strings
+    /// - Extracts the numeric value and parses it as u16
+    /// - Removes the sequence suffix from the original string
+    /// - Validates that a sequence number was successfully extracted
     fn strip_number_in_str(&self, a_string: &String) -> Result<(u16, String), Error> {
         let version_of_block = Regex::new(r"\[\d+\]$").unwrap();
         let mut sequence_number: Option<u16> = None;
@@ -489,7 +475,15 @@ impl<'a> Comments<'a> {
             let line = line?;
             let potential_comment_line = line.trim();
             if potential_comment_line.starts_with(self.start_of_comment.as_str()) {
-                if let Err(message) = self.parse_comment(potential_comment_line) {
+                let comment_line = if self.current_state != State::COMMENT {
+                    // this will be the first line of the comment block
+                    // so flush out spaces and tabs to a single space
+                    let space_or_tab = Regex::new(r"[ \t]+").unwrap();
+                    space_or_tab.replace_all(potential_comment_line, " ")
+                } else {
+                    Cow::Borrowed(potential_comment_line)
+                };
+                if let Err(message) = self.parse_comment(&comment_line) {
                     self.current_state = State::ERROR;
                     if self.log_file.is_some() {
                         let log = self.log_file.as_mut().unwrap();
