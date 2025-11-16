@@ -31,7 +31,7 @@ pub struct Comments<'a> {
 }
 
 impl<'a> Comments<'a> {
-    //#EPIC Get Lines.ITEM Write the comment lines to the file path and name [0]
+    //#EPIC Get Lines.ITEM Write the comment lines to the file path and name
     //#
     //## Write Comment Block To File
     //#Create the file path and write out the comment block to the file having file name.
@@ -121,7 +121,8 @@ impl<'a> Comments<'a> {
     /// # Examples
     /// - Input: "MyCommentBlock[42]" → Output: (42, "MyCommentBlock")
     /// - Input: "AnotherBlock[1]" → Output: (1, "AnotherBlock")
-    /// - Input: "BlockWithoutNumber" → Error: "No Sequence number exist in name of block"
+    /// - Input: "BlockWithoutNumber" → Default to (0, "BlockWithoutNumber")
+    /// - Input: "MyCommentBlock[0]" → Error: Sequence numbers starts at 1 not 0, 0 is reserved
     ///
     /// # Implementation Details
     /// - Uses a regular expression to match `[number]` patterns at the end of strings
@@ -145,13 +146,19 @@ impl<'a> Comments<'a> {
         }
 
         if sequence_number.is_none() {
-            return Err(Error::new(
-                ErrorKind::Other,
-                "No Sequence number exist in name of block",
-            ));
+            // the default sequence number will now be 0
+            Ok((0u16, a_string.to_string()))
+        } else {
+            if sequence_number.unwrap() == 0 {
+                Err(Error::new(
+                    ErrorKind::Other,
+                    "Sequence numbers starts at 1 not 0, 0 is reserved",
+                ))
+            } else {
+                let block = version_of_block.replace_all(a_string, "");
+                Ok((sequence_number.unwrap(), block.as_ref().to_string()))
+            }
         }
-        let block = version_of_block.replace_all(a_string, "");
-        Ok((sequence_number.unwrap(), block.as_ref().to_string()))
     }
     /// Writes all accumulated comment blocks from history to their respective documentation files.
     ///
@@ -351,7 +358,7 @@ impl<'a> Comments<'a> {
         }
         Ok(())
     }
-    //#EPIC Get Lines.ITEM Write out all of the history [0]
+    //#EPIC Get Lines.ITEM Write out all of the history
     //#
     //##Write out all blocks encountered in the past after the last file was processed
     /// Finalizes and stores a completed comment block into the comment history.
@@ -426,7 +433,7 @@ impl<'a> Comments<'a> {
         }
         Ok(())
     }
-    //#EPIC Get Lines.ITEM Parse file for line blocks [0]
+    //#EPIC Get Lines.ITEM Parse file for line blocks
     //#
     //## Parse file for line blocks
     //#Open the file iff it exist. Read the file line by line and check if the line starts with the _start_
@@ -477,7 +484,7 @@ impl<'a> Comments<'a> {
             if potential_comment_line.starts_with(self.start_of_comment.as_str()) {
                 let comment_line = if self.current_state != State::COMMENT {
                     // this will be the first line of the comment block
-                    // so flush out spaces and tabs to a single space
+                    // so flush out spaces or tabs to a single space
                     let space_or_tab = Regex::new(r"[ \t]+").unwrap();
                     space_or_tab.replace_all(potential_comment_line, " ")
                 } else {
@@ -504,7 +511,7 @@ impl<'a> Comments<'a> {
         }
         Ok(())
     }
-    //#EPIC Get Lines.ITEM Get Line Blocks in all files [0]
+    //#EPIC Get Lines.ITEM Get Line Blocks in all files
     //#
     //## Get all the line blocks by looking at all the files in the folder having the file name extension
     //#Get all the files and filter by file type and file extension, then parse the filtered files. Write

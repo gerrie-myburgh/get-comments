@@ -27,10 +27,13 @@ Examples of starting up the get-comments program on the command line
  - The extention of the files that may be scanned in the `-dir`
  
 ## Format of first line of block of text
-Example 2. 
+Examples 
 
-_.**PERSON** Jan Pogompoel.**INVOICE** 001.**ITEM** line items [0]_
+_.**PERSON** Jan Pogompoel.**INVOICE** 001.**ITEM** line items [1]_
 
+_.**PERSON** Jan Pogompoel.**INVOICE** 001.**ITEM** line items_
+
+Sequence numbers that are defined starts at 1 upwards, 0 is reserved for unmarked first lines.   
 This created the following structure in the file system:
 
 ![folder structure](folder-structure.png)
