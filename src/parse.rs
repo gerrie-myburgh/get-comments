@@ -320,14 +320,14 @@ impl<'a> Comments<'a> {
     /// # Note:
     /// - The comment block name typically follows a hierarchical naming convention with
     ///   dot-separated components (e.g., "EPIC.ITEM.TASK")
-    /// - The line number is recorded as `line_counter + 1` because `line_counter` tracks
+    /// - The line number is recorded as `line_counter` because `line_counter` tracks
     ///   the line that was just processed, and we want the starting line of the comment
     /// - This function is called exclusively by `parse_comment` during state transitions
     /// - The extracted comment block name will later be processed by `strip_number_in_str`
     ///   to separate Sequence numbers from the actual block name
     fn parse_comment_start(&mut self, line: &str) -> Result<(), String> {
         let comment_name = line[self.start_of_comment.len()..].trim();
-        self.comment_line_start = self.line_counter + 1;
+        self.comment_line_start = self.line_counter;
         self.current_comment_name = comment_name.to_string();
         Ok(())
     }
