@@ -18,6 +18,7 @@ enum State {
 
 #[derive(Default)]
 pub struct Comments<'a> {
+    dest_file_extension: &'a str,
     folder_prefixes: Vec<&'a str>,
     current_state: State,
     comment_history: HashMap<String, BTreeMap<u16, Vec<String>>>,
@@ -90,7 +91,7 @@ impl<'a> Comments<'a> {
         if let Some(file) = path.pop() {
             create_dir_all(path.join("/"))?;
             path.push(file);
-            let path_and_file_name = format!("{}.md", path.join("/"));
+            let path_and_file_name = format!("{}.{}", path.join("/"), self.dest_file_extension);
             let file = OpenOptions::new()
                 .append(true)
                 .create(true)
@@ -152,7 +153,10 @@ impl<'a> Comments<'a> {
             if sequence_number.unwrap() == 0 {
                 Err(Error::new(
                     ErrorKind::Other,
-                    "Sequence numbers starts at 1 not 0, 0 is reserved",
+                    format!(
+                        "E00:Sequence numbers starts at 1 not 0, 0 is reserved - {}",
+                        a_string
+                    ),
                 ))
             } else {
                 let block = version_of_block.replace_all(a_string, "");
@@ -263,23 +267,33 @@ impl<'a> Comments<'a> {
     ) -> Result<(), String> {
         let path: Vec<&str> = file_path_and_name.split(".").collect();
         if path.is_empty() {
-            return Err(
-                "There is no file path in the first line of the comment block.".to_string(),
-            );
+            return Err(format!(
+                "E01:There is no file path and name in the first line of the comment block is empty."
+            ));
         }
         if path.len() > folder_prefixes.len() + 1 {
-            return Err("Path is longer than what is allowed.".to_string());
+            return Err(format!(
+                "E02:Path is longer than what is allowed - What is allowed {}, what is defined {}",
+                folder_prefixes.join("."),
+                file_path_and_name,
+            ));
         }
 
         let comment_name = file_path_and_name;
         if self.comment_block_names.contains(comment_name) {
-            return Err("Comment block name must be unique in code base.".to_string());
+            return Err(format!(
+                "E03:Comment block name must be unique in all files that is scanned - {}",
+                file_path_and_name
+            ));
         }
 
         let prefixes: Vec<_> = path[1..].iter().zip(folder_prefixes).collect();
         for item in prefixes {
             if !item.0.starts_with(item.1) {
-                return Err(format!("Invalid folder prefix [{}] [{}].", item.0, item.1));
+                return Err(format!(
+                    "E04:Invalid folder prefix - encountered [{}], required [{}] - {}",
+                    item.0, item.1, file_path_and_name
+                ));
             }
         }
         Ok(())
@@ -306,14 +320,14 @@ impl<'a> Comments<'a> {
     /// # Note:
     /// - The comment block name typically follows a hierarchical naming convention with
     ///   dot-separated components (e.g., "EPIC.ITEM.TASK")
-    /// - The line number is recorded as `line_counter + 1` because `line_counter` tracks
+    /// - The line number is recorded as `line_counter` because `line_counter` tracks
     ///   the line that was just processed, and we want the starting line of the comment
     /// - This function is called exclusively by `parse_comment` during state transitions
     /// - The extracted comment block name will later be processed by `strip_number_in_str`
     ///   to separate Sequence numbers from the actual block name
     fn parse_comment_start(&mut self, line: &str) -> Result<(), String> {
         let comment_name = line[self.start_of_comment.len()..].trim();
-        self.comment_line_start = self.line_counter + 1;
+        self.comment_line_start = self.line_counter;
         self.current_comment_name = comment_name.to_string();
         Ok(())
     }
@@ -404,7 +418,7 @@ impl<'a> Comments<'a> {
         self.current_state = State::CODE;
         if self.comment.len() > 0 {
             let mut all_block_lines = vec![format!(
-                "[SOURCE FILE:](file:///{file_name}) LINE: {}\n",
+                "[{file_name}:](file:///{file_name}) LINE: {}\n",
                 self.comment_line_start
             )];
             // keep history of comments
@@ -421,7 +435,7 @@ impl<'a> Comments<'a> {
                 return Err(Error::new(
                     ErrorKind::Other,
                     format!(
-                        "Duplicate Sequence number exist in name of block {}",
+                        "E05:Duplicate Sequence number exist in name of block - {}",
                         comment_name.0
                     ),
                 ));
@@ -558,10 +572,12 @@ impl<'a> Comments<'a> {
         start: &str,
         folder_prefixes: &'a str,
         file_extension: &str,
+        destination_file_extension: &'a str,
     ) {
         let _ = remove_dir_all(doc_root);
         self.start_of_comment = start.to_string();
         self.current_state = State::CODE;
+        self.dest_file_extension = destination_file_extension;
 
         for entry in WalkDir::new(folder_name)
             .follow_links(true)

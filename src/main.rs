@@ -20,6 +20,13 @@ use cli_command::parse_command_line;
 //#    Once all of the files is processed then write out the comment one by one to the Markdown files.
 //# 4. [[docs/EPIC Get Lines/ITEM Write the comment lines to the file path and name.md]]
 //#    Take the current comment block and write it out to the Markdown file.
+//
+//#EPIC Get Lines.ITEM Improve error messaging
+//##Improve error messages by making them descriptive from user point of view.
+//#
+//# 1. Change error messages strings
+//# 2. Prepend error code to error messages eg E00: or E01: ...
+//# 3. Add command line parameter to define output files extension and use it
 fn main() {
     if let Ok(cli) = parse_command_line() {
         let some_dir = cli.get_argument("dir");
@@ -27,12 +34,14 @@ fn main() {
         let some_start = cli.get_argument("start");
         let some_path = cli.get_argument("path");
         let some_extension = cli.get_argument("ext");
+        let some_destination_extension = cli.get_argument("dest");
 
         if some_dir.is_some()
             && some_work.is_some()
             && some_start.is_some()
             && some_path.is_some()
             && some_extension.is_some()
+            && some_destination_extension.is_some()
         {
             let mut comment_parser = parse::Comments::default();
             comment_parser.comment_in_files(
@@ -41,10 +50,11 @@ fn main() {
                 some_start.unwrap(),
                 some_path.unwrap(),
                 some_extension.unwrap(),
+                some_destination_extension.unwrap(),
             );
         } else {
             println!(
-                "command line -dir source_folder -work document_root -start comment_start -path legal_folder_prefix -ext file_extension"
+                "command line -dir source_folder -work document_root -start comment_start -path legal_folder_prefix -ext file_extension -dest destination_files_extension"
             )
         }
     }
