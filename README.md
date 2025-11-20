@@ -72,3 +72,7 @@ get-comments -dir '/media/gerrie/Media/Workspace/rust/get-comments/src' -work 'd
 _Explanation of example_
 
 Look in all the rust (.rs) files at `/media/gerrie/Media/Workspace/rust/get-comments/src` recursive for all lines starting with `//#`. Create folders and files in die `documents` folder in die current working folder. All folders and files must start with either 'EPIC', 'ITEM' or 'TEST' with a depth of at most 3 under `documents`.
+
+__test run__
+
+cargo test

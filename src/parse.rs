@@ -8,7 +8,7 @@ use walkdir::WalkDir;
 type Value = String;
 type CommentStart = String;
 
-#[derive(Default, PartialEq)]
+#[derive(Debug, Default, PartialEq)]
 enum State {
     #[default]
     CODE,
@@ -88,19 +88,22 @@ impl<'a> Comments<'a> {
             return Err(Error::new(ErrorKind::Other, message));
         }
 
-        if let Some(file) = path.pop() {
-            create_dir_all(path.join("/"))?;
-            path.push(file);
-            let path_and_file_name = format!("{}.{}", path.join("/"), self.dest_file_extension);
-            let file = OpenOptions::new()
-                .append(true)
-                .create(true)
-                .open(path_and_file_name)?;
-            let mut writer = BufWriter::new(file);
-            for line in lines {
-                writeln!(writer, "{}", line)?;
+        #[cfg(not(test))]
+        {
+            if let Some(file) = path.pop() {
+                create_dir_all(path.join("/"))?;
+                path.push(file);
+                let path_and_file_name = format!("{}.{}", path.join("/"), self.dest_file_extension);
+                let file = OpenOptions::new()
+                    .append(true)
+                    .create(true)
+                    .open(path_and_file_name)?;
+                let mut writer = BufWriter::new(file);
+                for line in lines {
+                    writeln!(writer, "{}", line)?;
+                }
+                writeln!(writer, "")?;
             }
-            writeln!(writer, "")?;
         }
         Ok(())
     }
@@ -130,7 +133,7 @@ impl<'a> Comments<'a> {
     /// - Extracts the numeric value and parses it as u16
     /// - Removes the sequence suffix from the original string
     /// - Validates that a sequence number was successfully extracted
-    fn strip_number_in_str(&self, a_string: &String) -> Result<(u16, String), Error> {
+    fn strip_number_in_str(&self, a_string: &str) -> Result<(u16, String), Error> {
         let version_of_block = Regex::new(r"\[\d+\]$").unwrap();
         let mut sequence_number: Option<u16> = None;
         if let Some(capture) = version_of_block.captures(a_string) {
@@ -208,7 +211,7 @@ impl<'a> Comments<'a> {
                     if let Err(error) =
                         self.write_out_to_file(&self.folder_prefixes, file_name, value)
                     {
-                        error_string = error.to_string()
+                        error_string = error.to_string();
                     }
                 }
             },
@@ -410,7 +413,7 @@ impl<'a> Comments<'a> {
     /// # Note:
     /// The function uses BTreeMap to maintain comment blocks in Sequence order and
     /// HashSet to ensure unique comment block names across the entire codebase.
-    fn write_out_all_history(
+    fn save_block_in_history(
         &mut self,
         file_name: &str,
         doc_root: &str,
@@ -435,14 +438,24 @@ impl<'a> Comments<'a> {
                 return Err(Error::new(
                     ErrorKind::Other,
                     format!(
-                        "E05:Duplicate Sequence number exist in name of block - {}",
+                        "E05:Duplicate Sequence number exist in name of block - [{}]",
                         comment_name.0
                     ),
                 ));
             }
 
-            self.comment_block_names
-                .insert(self.current_comment_name.clone());
+            if !self
+                .comment_block_names
+                .insert(self.current_comment_name.clone())
+            {
+                return Err(Error::new(
+                    ErrorKind::Other,
+                    format!(
+                        "E05:Duplicate name of block - [{}]",
+                        self.current_comment_name,
+                    ),
+                ));
+            }
             self.comment.clear();
         }
         Ok(())
@@ -515,13 +528,13 @@ impl<'a> Comments<'a> {
                 }
             } else {
                 if self.current_state == State::COMMENT {
-                    self.write_out_all_history(file_name, doc_root)?;
+                    self.save_block_in_history(file_name, doc_root)?;
                 }
             }
             self.line_counter += 1u16;
         }
         if self.current_state == State::COMMENT {
-            self.write_out_all_history(file_name, doc_root)?;
+            self.save_block_in_history(file_name, doc_root)?;
         }
         Ok(())
     }
@@ -607,18 +620,155 @@ impl<'a> Comments<'a> {
 }
 
 #[cfg(test)]
-#[test]
-fn test_if_file_path_is_valid() {
-    let mut comments = Comments::default();
-    let path = &vec!["EPIC", "ITEM", "TEST"];
-    if let Err(error) = comments.is_valid_folder_path(path, "EPIC epic.ITEM item.TEST test") {
-        println!("test {error}");
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_if_file_path_is_valid() {
+        let mut comments = Comments::default();
+        let path = &vec!["EPIC", "ITEM", "TEST"];
+        if let Err(error) = comments.is_valid_folder_path(path, "doc.EPIC epic.ITEM item.TEST test")
+        {
+            assert!(false, "test {error}");
+        }
+        comments.current_comment_name = "doc.EPIC epic.ITEM item.TEST test".to_string();
+        comments
+            .comment_block_names
+            .insert(comments.current_comment_name.clone());
+        if let Ok(()) = comments.is_valid_folder_path(path, "doc.EPIC epic.ITEM item.TEST test") {
+            assert!(false);
+        }
     }
-    comments.current_comment_name = "EPIC epic.ITEM item.TEST test".to_string();
-    comments
-        .comment_block_names
-        .insert(comments.current_comment_name.clone());
-    if let Err(error) = comments.is_valid_folder_path(path, "EPIC epic.ITEM item.TEST test") {
-        println!("{error}");
+
+    #[test]
+    fn test_write_out_to_file() {
+        let mut comments = Comments::default();
+        let path = &vec!["EPIC", "ITEM", "TEST"];
+
+        // empty path and file name path
+        if let Err(error) = comments.write_out_to_file(path, "", &Vec::<String>::new()) {
+            let result = error.to_string();
+            assert!(result.starts_with("E01"), "no path and file name {}", error)
+        }
+        // path to long
+        if let Err(error) = comments.write_out_to_file(
+            path,
+            "doc.EPIC epic.ITEM item.TEST test.EXTRA name",
+            &vec![String::new()],
+        ) {
+            let result = error.to_string();
+            assert!(result.starts_with("E02"), "Path to long {}", error)
+        }
+        // duplicate header
+        comments
+            .comment_block_names
+            .insert("EPIC epic.ITEM item.TEST test".to_string());
+        if let Err(error) = comments.write_out_to_file(
+            path,
+            "doc.EPIC epic.ITEM item.TEST test",
+            &vec![String::new()],
+        ) {
+            let result = error.to_string();
+            assert!(result.starts_with("E03"), "duplicate header {}", error)
+        }
+        // incorrect folder start string
+        if let Err(error) = comments.write_out_to_file(
+            path,
+            "doc.EPIC epic.ITEM item.WRONG_FOLDER_NAME test",
+            &vec![String::new()],
+        ) {
+            let result = error.to_string();
+            assert!(result.starts_with("E04"), "wrong folder name {}", error)
+        }
+    }
+
+    #[test]
+    fn test_strip_number_in_str() {
+        let comments = Comments::default();
+        // [0] is reserved
+        if let Err(error) = comments.strip_number_in_str("xx is not u16 [0]") {
+            let result = error.to_string();
+            assert!(result.starts_with("E00"), "{}", error)
+        }
+        if let Ok((value, stripped_string)) = comments.strip_number_in_str("x is not [\\d+] [x]") {
+            assert!(value == 0, "u16 in string must be 0");
+            assert!(
+                stripped_string == "x is not [\\d+] [x]",
+                "stripped string is not 'x is not [\\d+]' '{}'",
+                stripped_string
+            )
+        }
+    }
+
+    #[test]
+    fn test_write_history() {
+        let mut comments = Comments::default();
+        comments.folder_prefixes = vec!["EPIC"];
+        let _ = comments
+            .comment_history
+            .entry(format!("{}", "EPIC comment_name1".to_string()))
+            .or_insert_with(|| BTreeMap::new())
+            .insert(0, vec!["string".to_string()]);
+        if let Err(error) = comments.write_history() {
+            assert!(false, "write history {}", error.to_string());
+        }
+    }
+
+    #[test]
+    fn test_parse_comment_start() {
+        let mut comments = Comments::default();
+        comments.folder_prefixes = vec!["EPIC", "ITEM", "TEST"];
+        comments.start_of_comment = ".".to_string();
+        if let Err(error) = comments.parse_comment_start(".EPIC epic") {
+            assert!(false, "parse comment start {}", error.to_string());
+        }
+    }
+
+    #[test]
+    fn test_parse_comment() {
+        let mut comments = Comments::default();
+        comments.folder_prefixes = vec!["EPIC", "ITEM", "TEST"];
+        comments.start_of_comment = ".".to_string();
+        comments.current_state = State::CODE;
+        if let Err(error) = comments.parse_comment(".EPIC epic") {
+            assert!(false, "{error}");
+            assert!(
+                comments.current_state == State::COMMENT,
+                "invalid {:?}",
+                comments.current_state,
+            );
+        }
+    }
+
+    #[test]
+    fn test_save_block_in_history() {
+        let mut comments = Comments::default();
+        comments.folder_prefixes = vec!["EPIC", "ITEM", "TEST"];
+        comments.start_of_comment = ".".to_string();
+        comments.comment = vec!["one.to_string".to_string()];
+
+        comments.current_comment_name = "EPIC bla [1]".to_string();
+        if let Err(error) = comments.save_block_in_history("file_name", "doc_root") {
+            assert!(false, "save history failed - {}", error.to_string());
+            assert!(
+                comments.comment_history.len() == 1,
+                "One item must be in history"
+            );
+        }
+
+        comments.comment = vec!["one.to_string".to_string()];
+        comments.current_comment_name = "EPIC bla [1]".to_string();
+        if let Err(error) = comments.save_block_in_history("file_name", "doc_root") {
+            let err = error.to_string();
+            assert!(
+                err.starts_with("E05"),
+                "duplicate seq number - {}",
+                error.to_string()
+            );
+            assert!(
+                comments.comment_history.len() == 1,
+                "One item must be in history"
+            );
+        }
     }
 }
