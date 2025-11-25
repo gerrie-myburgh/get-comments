@@ -76,3 +76,13 @@ Look in all the rust (.rs) files at `/media/gerrie/Media/Workspace/rust/get-comm
 __test run__
 
 cargo test
+
+./convert-to-html.sh "EPIC Get Lines.adoc"
+
+__NOTE__
+
+The string `$FILE$` is a placeholder for the name name of the file that contains the text that is parsed for comment line and the `$LINE$` is a placeholder for the line number where the comment block starts.
+
+_Usage_
+
+Example: `[$FILE$](file://$FILE$) LINE: $LINE$`

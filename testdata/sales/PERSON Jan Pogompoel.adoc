@@ -1,0 +1,10 @@
+link:../text-test-data1.txt[test data] LINE: 1
+
+== Jan is a person
+
+- bullet point
+
+image:../../folder-structure.png[Folder structure]
+
+include::./PERSON Jan Pogompoel/INVOICE 001.adoc[]
+include::./PERSON Jan Pogompoel/INVOICE 001/ITEM line items.adoc[]

@@ -2,6 +2,8 @@ mod parse;
 use cli_command::parse_command_line;
 
 //#EPIC Get Lines
+//#[$FILE$](file://$FILE$) LINE: $LINE$
+//#
 //## Get lines from text files and put the line blocks into Markdown files.
 //#A _line block_ is any number number of consecutive lines that starts with the `start` string,
 //#an example is a start string of `//#` and an example line ` //# some text...`.

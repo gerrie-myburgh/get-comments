@@ -365,13 +365,17 @@ impl<'a> Comments<'a> {
     /// This function is called by `parse_file` for every line that starts with the
     /// comment marker string. It's responsible for the state transitions that define
     /// comment block boundaries.
-    fn parse_comment(&mut self, line: &str) -> Result<(), String> {
+    fn parse_comment(&mut self, line: &str, file_name: &str) -> Result<(), String> {
         if self.current_state == State::CODE {
             self.current_state = State::COMMENT;
             self.parse_comment_start(line)?;
         } else {
             let comment_line = line[self.start_of_comment.len()..].to_string();
-            self.comment.push(comment_line.to_string());
+            self.comment.push(
+                comment_line
+                    .replace("$FILE$", file_name)
+                    .replace("$LINE$", self.comment_line_start.to_string().as_str()),
+            );
         }
         Ok(())
     }
@@ -415,15 +419,12 @@ impl<'a> Comments<'a> {
     /// HashSet to ensure unique comment block names across the entire codebase.
     fn save_block_in_history(
         &mut self,
-        file_name: &str,
+        _file_name: &str,
         doc_root: &str,
     ) -> Result<(), std::io::Error> {
         self.current_state = State::CODE;
         if self.comment.len() > 0 {
-            let mut all_block_lines = vec![format!(
-                "[{file_name}:](file:///{file_name}) LINE: {}\n",
-                self.comment_line_start
-            )];
+            let mut all_block_lines = vec![];
             // keep history of comments
             all_block_lines.append(&mut self.comment);
             let comment_name = self.strip_number_in_str(&self.current_comment_name)?;
@@ -517,7 +518,7 @@ impl<'a> Comments<'a> {
                 } else {
                     Cow::Borrowed(potential_comment_line)
                 };
-                if let Err(message) = self.parse_comment(&comment_line) {
+                if let Err(message) = self.parse_comment(&comment_line, file_name) {
                     self.current_state = State::ERROR;
                     if self.log_file.is_some() {
                         let log = self.log_file.as_mut().unwrap();
@@ -730,7 +731,7 @@ mod test {
         comments.folder_prefixes = vec!["EPIC", "ITEM", "TEST"];
         comments.start_of_comment = ".".to_string();
         comments.current_state = State::CODE;
-        if let Err(error) = comments.parse_comment(".EPIC epic") {
+        if let Err(error) = comments.parse_comment(".EPIC epic", "FILE NAME") {
             assert!(false, "{error}");
             assert!(
                 comments.current_state == State::COMMENT,
