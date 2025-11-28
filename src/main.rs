@@ -1,6 +1,7 @@
 mod parse;
 use cli_command::parse_command_line;
 
+const VERSION: &str = "1.0.1";
 //#EPIC Get Lines
 //#[$FILE$](file://$FILE$) LINE: $LINE$
 //#
@@ -31,6 +32,7 @@ use cli_command::parse_command_line;
 //# 3. Add command line parameter to define output files extension and use it
 fn main() {
     if let Ok(cli) = parse_command_line() {
+        let get_version = cli.contains_argument("ver");
         let some_dir = cli.get_argument("dir");
         let some_work = cli.get_argument("work");
         let some_start = cli.get_argument("start");
@@ -38,6 +40,10 @@ fn main() {
         let some_extension = cli.get_argument("ext");
         let some_destination_extension = cli.get_argument("dest");
 
+        if get_version {
+            println!("{}", VERSION);
+            return;
+        }
         if some_dir.is_some()
             && some_work.is_some()
             && some_start.is_some()
