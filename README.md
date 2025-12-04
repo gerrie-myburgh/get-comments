@@ -72,3 +72,17 @@ get-comments -dir '/media/gerrie/Media/Workspace/rust/get-comments/src' -work 'd
 _Explanation of example_
 
 Look in all the rust (.rs) files at `/media/gerrie/Media/Workspace/rust/get-comments/src` recursive for all lines starting with `//#`. Create folders and files in die `documents` folder in die current working folder. All folders and files must start with either 'EPIC', 'ITEM' or 'TEST' with a depth of at most 3 under `documents`.
+
+__test run__
+
+cargo test
+
+./convert-to-html.sh "EPIC Get Lines.adoc"
+
+__NOTE__
+
+The string `$FILE$` is a placeholder for the name name of the file that contains the text that is parsed for comment line and the `$LINE$` is a placeholder for the line number where the comment block starts.
+
+_Usage_
+
+Example: `[$FILE$](file://$FILE$) LINE: $LINE$`
